@@ -75,24 +75,40 @@ func uploadNitroFile(c *gin.Context) {
 		return
 	}
 
-	// Save file
-	filename := filepath.Base(file.Filename)
-	filepath := filepath.Join("../uploads", filename)
+	// Save file temporarily with original name
+	tempFilename := filepath.Base(file.Filename)
+	tempFilepath := filepath.Join("../uploads", tempFilename)
 
-	if err := c.SaveUploadedFile(file, filepath); err != nil {
+	if err := c.SaveUploadedFile(file, tempFilepath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving file"})
 		return
 	}
 
-	// Process .nitro file to get information
-	info, err := processNitroFile(filepath)
+	// Process .nitro file to get information and internal name
+	info, err := processNitroFile(tempFilepath)
 	if err != nil {
+		// Remove temp file on error
+		os.Remove(tempFilepath)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing file: " + err.Error()})
 		return
 	}
 
+	// Use internal name from JSON if available, otherwise use original filename
+	finalFilename := info.Name + ".nitro"
+	finalFilepath := filepath.Join("../uploads", finalFilename)
+
+	// If the final filename is different from temp, rename the file
+	if tempFilename != finalFilename {
+		if err := os.Rename(tempFilepath, finalFilepath); err != nil {
+			// If rename fails, remove temp file
+			os.Remove(tempFilepath)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error renaming file"})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"filename": filename,
+		"filename": finalFilename,
 		"info":     info,
 		"message":  "File uploaded successfully",
 	})

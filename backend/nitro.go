@@ -291,7 +291,7 @@ type NitroVisualization struct {
 }
 
 type NitroLayer struct {
-	Z           int     `json:"z"`
+	Z           float64 `json:"z"`
 	Alpha       int     `json:"alpha"`
 	Ink         string  `json:"ink"`
 	IgnoreMouse bool    `json:"ignoreMouse"`
