@@ -12,6 +12,7 @@ const styles = `
     cursor: pointer;
     font-size: 12px;
     margin-right: 8px;
+    color: black;
   }
   .tool-btn:hover {
     background: #f0f0f0;
