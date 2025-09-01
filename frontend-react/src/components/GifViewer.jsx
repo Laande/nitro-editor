@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 
 const GifViewer = ({ loading, renderedGif }) => {
   const [isDragging, setIsDragging] = useState(false)
-  const [gridPosition, setGridPosition] = useState({ x: 0, y: 0 })
+  const [gridPosition, setGridPosition] = useState(null)
   const [tempPosition, setTempPosition] = useState({ x: 0, y: 0 })
-  
+
   const gifContainerRef = useRef(null)
 
   const TILE_WIDTH = 64
@@ -53,23 +53,26 @@ const GifViewer = ({ loading, renderedGif }) => {
     }
   }, [isDragging])
 
+  // Reset position when a new mobis loads
+  useEffect(() => {
+    if (renderedGif) {
+      setGridPosition(null)
+    }
+  }, [renderedGif])
+
   const getPixelPosition = () => {
     if (isDragging) return tempPosition
-    if (!gifContainerRef.current?.parentElement) return { x: '50%', y: '50%' }
+    if (!gifContainerRef.current?.parentElement || !gridPosition) return null
 
     const viewer = gifContainerRef.current.parentElement
     const centerX = viewer.offsetWidth / 2
     const centerY = viewer.offsetHeight / 2
-    
+
     return {
       x: centerX + (gridPosition.x - gridPosition.y) * (TILE_WIDTH / 2),
       y: centerY + (gridPosition.x + gridPosition.y) * (TILE_HEIGHT / 2)
     }
   }
-
-  useEffect(() => {
-    if (renderedGif) setGridPosition({ x: 0, y: 0 })
-  }, [renderedGif])
 
   const pixelPosition = getPixelPosition()
 
@@ -85,10 +88,12 @@ const GifViewer = ({ loading, renderedGif }) => {
         <div
           ref={gifContainerRef}
           className={`gif-container ${isDragging ? 'dragging' : ''}`}
-          style={{
+          style={pixelPosition ? {
             left: `${pixelPosition.x}px`,
             top: `${pixelPosition.y}px`,
             transform: 'translate(-50%, -50%)',
+            transition: isDragging ? 'none' : 'all 0.2s ease'
+          } : {
             transition: isDragging ? 'none' : 'all 0.2s ease'
           }}
         >
