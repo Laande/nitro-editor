@@ -2,99 +2,94 @@ import { useState, useRef, useEffect } from 'react'
 
 const GifViewer = ({ loading, renderedGif }) => {
   const [isDragging, setIsDragging] = useState(false)
-  const [dragPosition, setDragPosition] = useState({ x: 'center', y: 'center' })
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [gridPosition, setGridPosition] = useState({ x: 0, y: 0 })
+  const [tempPosition, setTempPosition] = useState({ x: 0, y: 0 })
   
   const gifContainerRef = useRef(null)
 
+  const TILE_WIDTH = 64
+  const TILE_HEIGHT = 32
+
+  const getMousePosition = (e) => {
+    const rect = gifContainerRef.current.parentElement.getBoundingClientRect()
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  }
+
   const handleMouseDown = (e) => {
     if (!gifContainerRef.current || !renderedGif) return
-    
-    const rect = gifContainerRef.current.getBoundingClientRect()
-    
     setIsDragging(true)
-    const centerX = rect.left + rect.width / 2
-    const centerY = rect.top + rect.height / 2
-    setDragOffset({
-      x: e.clientX - centerX,
-      y: e.clientY - centerY
-    })
-    
+    setTempPosition(getMousePosition(e))
     e.preventDefault()
   }
 
   const handleMouseMove = (e) => {
-    if (!isDragging || !gifContainerRef.current) return
-    
-    const viewerRect = gifContainerRef.current.parentElement.getBoundingClientRect()
-    const containerRect = gifContainerRef.current.getBoundingClientRect()
-    
-    const newCenterX = e.clientX - dragOffset.x
-    const newCenterY = e.clientY - dragOffset.y
-    
-    const newX = newCenterX - viewerRect.left - containerRect.width / 2
-    const newY = newCenterY - viewerRect.top - containerRect.height / 2
-    
-    const maxX = viewerRect.width - containerRect.width
-    const maxY = viewerRect.height - containerRect.height
-    
-    const constrainedX = Math.max(0, Math.min(newX, maxX))
-    const constrainedY = Math.max(0, Math.min(newY, maxY))
-    
-    setDragPosition({ x: constrainedX, y: constrainedY })
+    if (isDragging) setTempPosition(getMousePosition(e))
   }
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
+    if (!isDragging) return
     setIsDragging(false)
+
+    const viewer = gifContainerRef.current.parentElement
+    const rect = viewer.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left - viewer.offsetWidth / 2
+    const mouseY = e.clientY - rect.top - viewer.offsetHeight / 2
+
+    const isoX = (mouseX / (TILE_WIDTH / 2) + mouseY / (TILE_HEIGHT / 2)) / 2
+    const isoY = (mouseY / (TILE_HEIGHT / 2) - mouseX / (TILE_WIDTH / 2)) / 2
+
+    setGridPosition({ x: Math.round(isoX), y: Math.round(isoY) })
   }
 
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
-      
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
       }
     }
-  }, [isDragging, dragOffset])
+  }, [isDragging])
+
+  const getPixelPosition = () => {
+    if (isDragging) return tempPosition
+    if (!gifContainerRef.current?.parentElement) return { x: '50%', y: '50%' }
+
+    const viewer = gifContainerRef.current.parentElement
+    const centerX = viewer.offsetWidth / 2
+    const centerY = viewer.offsetHeight / 2
+    
+    return {
+      x: centerX + (gridPosition.x - gridPosition.y) * (TILE_WIDTH / 2),
+      y: centerY + (gridPosition.x + gridPosition.y) * (TILE_HEIGHT / 2)
+    }
+  }
 
   useEffect(() => {
-    if (renderedGif && gifContainerRef.current && (dragPosition.x === 'center' || dragPosition.y === 'center')) {
-      const container = gifContainerRef.current
-      const viewer = container.parentElement
-      
-      if (viewer) {
-        const viewerRect = viewer.getBoundingClientRect()
-        const containerRect = container.getBoundingClientRect()
-        
-        const centerX = (viewerRect.width - containerRect.width) / 2
-        const centerY = (viewerRect.height - containerRect.height) / 2
-        
-        setDragPosition({ x: Math.max(0, centerX), y: Math.max(0, centerY) })
-      }
-    }
+    if (renderedGif) setGridPosition({ x: 0, y: 0 })
   }, [renderedGif])
+
+  const pixelPosition = getPixelPosition()
 
   return (
     <div className="viewer-section" onMouseDown={handleMouseDown}>
       {loading && <div className="loading">Procesando...</div>}
-      
       {!loading && !renderedGif && (
         <div className="placeholder">
           <p>🎮 Upload a .nitro file to get started</p>
         </div>
       )}
-      
       {!loading && renderedGif && (
-        <div 
+        <div
           ref={gifContainerRef}
           className={`gif-container ${isDragging ? 'dragging' : ''}`}
           style={{
-            left: dragPosition.x === 'center' ? '50%' : `${dragPosition.x}px`,
-            top: dragPosition.y === 'center' ? '50%' : `${dragPosition.y}px`,
-            transform: dragPosition.x === 'center' || dragPosition.y === 'center' ? 'translate(-50%, -50%)' : 'none'
+            left: `${pixelPosition.x}px`,
+            top: `${pixelPosition.y}px`,
+            transform: 'translate(-50%, -50%)',
+            transition: isDragging ? 'none' : 'all 0.2s ease'
           }}
         >
           <img src={renderedGif} alt="Rendered furniture" />
