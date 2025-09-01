@@ -68,16 +68,10 @@ function App() {
 
     if (uploadedFileInfo) {
       setFileInfo(uploadedFileInfo)
-      initializeControls(uploadedFileInfo)
+      initializeControls(uploadedFileInfo, autoRender)
 
       // Load JSON content
       loadJsonContent(uploadedFileInfo.name)
-
-      if (autoRender) {
-        setTimeout(() => {
-          renderGIF(uploadedFileInfo.directions[0], uploadedFileInfo.states[0], uploadedFileInfo.colors[0], uploadedFileInfo.name)
-        }, 500)
-      }
     }
   }
 

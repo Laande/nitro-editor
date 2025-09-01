@@ -5,8 +5,6 @@ export const useGifRenderer = (setSuccess, setError) => {
   const [selectedState, setSelectedState] = useState(null)
   const [selectedColor, setSelectedColor] = useState(null)
   const [renderedGif, setRenderedGif] = useState(null)
-  
-  const renderDebounceRef = useRef(null)
 
   const renderGIF = async (direction = selectedDirection, state = selectedState, color = selectedColor, filename) => {
     if (!filename) return
@@ -27,7 +25,7 @@ export const useGifRenderer = (setSuccess, setError) => {
       })
 
       const result = await response.json()
-      
+
       if (response.ok) {
         const gifUrlWithTimestamp = result.gif_url + '?t=' + Date.now()
         setRenderedGif(gifUrlWithTimestamp)
@@ -40,20 +38,11 @@ export const useGifRenderer = (setSuccess, setError) => {
     }
   }
 
-  const autoRenderWithDebounce = (direction = selectedDirection, state = selectedState, color = selectedColor, filename) => {
-    if (renderDebounceRef.current) {
-      clearTimeout(renderDebounceRef.current)
-    }
-    renderDebounceRef.current = setTimeout(() => {
-      renderGIF(direction, state, color, filename)
-    }, 150)
-  }
-
   const handleControlChange = (type, value, fileInfo) => {
     let newDirection = selectedDirection
     let newState = selectedState
     let newColor = selectedColor
-    
+
     if (type === 'direction') {
       newDirection = value
       setSelectedDirection(value)
@@ -64,15 +53,26 @@ export const useGifRenderer = (setSuccess, setError) => {
       newColor = value
       setSelectedColor(value)
     }
-    
-    autoRenderWithDebounce(newDirection, newState, newColor, fileInfo?.name)
+
+    renderGIF(newDirection, newState, newColor, fileInfo?.name)
   }
 
-  const initializeControls = (fileInfo) => {
+  const initializeControls = (fileInfo, autoRender = false) => {
     if (fileInfo) {
-      setSelectedDirection(fileInfo.directions[0])
-      setSelectedState(fileInfo.states[0])
-      setSelectedColor(fileInfo.colors[0])
+      // Set default direction to 2 if available, otherwise use first available
+      const defaultDirection = fileInfo.directions.includes(2) ? 2 : fileInfo.directions[0]
+      const defaultState = fileInfo.states[0]
+      const defaultColor = fileInfo.colors[0]
+
+      setSelectedDirection(defaultDirection)
+      setSelectedState(defaultState)
+      setSelectedColor(defaultColor)
+
+      if (autoRender) {
+        setTimeout(() => {
+          renderGIF(defaultDirection, defaultState, defaultColor, fileInfo.name)
+        }, 100)
+      }
     }
   }
 
