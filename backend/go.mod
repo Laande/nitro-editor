@@ -4,10 +4,8 @@ go 1.22
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	xabbo.io/nx v0.0.0
+	xabbo.io/nx v0.3.0
 )
-
-replace xabbo.io/nx => ../../nx
 
 require (
 	b7c.io/swfx v0.0.0-20240604125855-bbc10c486bfc // indirect
