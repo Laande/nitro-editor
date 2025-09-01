@@ -142,12 +142,7 @@ const PngEditor = ({
     setPixelData(previousState)
     drawPixelData(previousState)
     
-    if (renderDebounceRef.current) {
-      clearTimeout(renderDebounceRef.current)
-    }
-    renderDebounceRef.current = setTimeout(() => {
-      onSavePngFromPixelData(previousState)
-    }, 1000)
+    renderDebounceRef.current = onSavePngFromPixelData(previousState)
   }
   
   const redo = () => {
@@ -161,12 +156,7 @@ const PngEditor = ({
     setPixelData(nextState)
     drawPixelData(nextState)
     
-    if (renderDebounceRef.current) {
-      clearTimeout(renderDebounceRef.current)
-    }
-    renderDebounceRef.current = setTimeout(() => {
-      onSavePngFromPixelData(nextState)
-    }, 1000)
+    renderDebounceRef.current = onSavePngFromPixelData(nextState)
   }
 
   // Brush application
@@ -292,12 +282,7 @@ const PngEditor = ({
       setIsDrawing(false)
       setStrokeStarted(false)
       
-      if (renderDebounceRef.current) {
-        clearTimeout(renderDebounceRef.current)
-      }
-      renderDebounceRef.current = setTimeout(() => {
-        onSavePngFromPixelData(pixelData)
-      }, 1000)
+      renderDebounceRef.current = onSavePngFromPixelData(pixelData)
     }
   }
 
@@ -316,12 +301,7 @@ const PngEditor = ({
       setPixelData(newPixelData)
       drawPixelData(newPixelData)
       
-      if (renderDebounceRef.current) {
-        clearTimeout(renderDebounceRef.current)
-      }
-      renderDebounceRef.current = setTimeout(() => {
-        onSavePngFromPixelData(newPixelData)
-      }, 1000)
+      renderDebounceRef.current = onSavePngFromPixelData(newPixelData)
     }
   }
 
